@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { CYCLE_HOURS_DEFAULT, DEFAULT_FORM, COLORS } from "../constants";
 import {
   calcDistribuicao,
@@ -7,15 +7,19 @@ import {
   exportCycleFile,
   parseImportedFile,
 } from "../utils";
+import { useHistorico } from "./useHistorico";
 
 export function useStudyBot() {
-  const saved = loadFromStorage();
+  // lê o storage apenas uma vez na montagem do componente
+  const saved = useMemo(() => loadFromStorage(), []);
 
-  const [totalHoras, setTotalHoras]   = useState(saved?.totalHoras ?? CYCLE_HOURS_DEFAULT);
-  const [subjects,   setSubjects]     = useState(saved?.subjects   ?? []);
-  const [form,       setForm]         = useState(DEFAULT_FORM);
-  const [editId,     setEditId]       = useState(null);
-  const [savedToast, setSavedToast]   = useState(false);
+  const [totalHoras, setTotalHoras] = useState(saved?.totalHoras ?? CYCLE_HOURS_DEFAULT);
+  const [subjects,   setSubjects]   = useState(saved?.subjects   ?? []);
+  const [form,       setForm]       = useState(DEFAULT_FORM);
+  const [editId,     setEditId]     = useState(null);
+  const [savedToast, setSavedToast] = useState(false);
+
+  const { historico, registrarCiclo, limparHistorico } = useHistorico();
 
   // Persiste automaticamente a cada mudança
   useEffect(() => {
@@ -26,10 +30,10 @@ export function useStudyBot() {
   }, [subjects, totalHoras]);
 
   // ── Cálculos derivados ──────────────────────────────────────────────────
-  const dist           = calcDistribuicao(subjects, totalHoras);
-  const totalBlocos    = dist.reduce((a, s) => a + s.horas, 0);
+  const dist            = calcDistribuicao(subjects, totalHoras);
+  const totalBlocos     = dist.reduce((a, s) => a + s.horas, 0);
   const totalConcluidos = subjects.reduce((a, s) => a + (s.concluidos || 0), 0);
-  const progressoPct   = totalBlocos > 0
+  const progressoPct    = totalBlocos > 0
     ? Math.round((totalConcluidos / totalBlocos) * 1000) / 10
     : 0;
 
@@ -48,6 +52,10 @@ export function useStudyBot() {
 
   function removerMateria(id) {
     setSubjects((prev) => prev.filter((s) => s.id !== id));
+  }
+
+  function reordenarMaterias(novaOrdem) {
+    setSubjects(novaOrdem);
   }
 
   function iniciarEdicao(subject) {
@@ -81,6 +89,9 @@ export function useStudyBot() {
   }
 
   function resetarCiclo() {
+    if (totalConcluidos > 0) {
+      registrarCiclo({ subjects, dist, totalHoras, progressoPct });
+    }
     setSubjects((prev) => prev.map((s) => ({ ...s, concluidos: 0 })));
   }
 
@@ -110,17 +121,16 @@ export function useStudyBot() {
   }
 
   return {
-    // Estado
     totalHoras, setTotalHoras,
     subjects,
     form, setForm,
     editId,
     savedToast,
-    // Derivados
     dist, totalBlocos, totalConcluidos, progressoPct,
-    // Ações
-    salvarMateria, removerMateria, iniciarEdicao, cancelarEdicao,
+    salvarMateria, removerMateria, reordenarMaterias,
+    iniciarEdicao, cancelarEdicao,
     toggleBloco, resetarCiclo,
     exportar, importar,
+    historico, limparHistorico,
   };
 }
