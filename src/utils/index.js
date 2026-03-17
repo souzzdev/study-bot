@@ -2,23 +2,75 @@ import { ICON_MAP, STORAGE_KEY } from "../constants";
 
 // ── Distribuição de horas por matéria ──────────────────────────────────────
  export function calcDistribuicao(subjects, totalHoras) {
-  if (!subjects.length) return [];
+  if (!Array.isArray(subjects) || subjects.length === 0) return [];
 
-  const pesos = subjects.map(
-    (s) => s.dificuldade * s.conteudo * s.peso
-  );
+  // Garante que totalHoras seja um número válido
+  const total = Number(totalHoras);
+  if (!Number.isFinite(total) || total <= 0) {
+    return subjects.map((s) => ({ ...s, horas: 0 }));
+  }
+
+  // Sanitiza os valores
+  const pesos = subjects.map((s) => {
+    const dificuldade = Number(s.dificuldade) || 0;
+    const conteudo = Number(s.conteudo) || 0;
+    const peso = Number(s.peso) || 0;
+
+    const valor = dificuldade * conteudo * peso;
+
+    return valor > 0 ? valor : 0;
+  });
 
   const soma = pesos.reduce((a, b) => a + b, 0);
 
-  return subjects.map((s, i) => ({
+  // Se tudo deu zero, distribui igualmente
+  if (soma === 0) {
+    const horasBase = Math.floor(total / subjects.length);
+    let resto = total % subjects.length;
+
+    return subjects.map((s) => {
+      const extra = resto > 0 ? 1 : 0;
+      if (resto > 0) resto--;
+
+      return {
+        ...s,
+        horas: horasBase + extra,
+      };
+    });
+  }
+
+  // Distribuição proporcional inicial
+  let distribuicao = subjects.map((s, i) => ({
     ...s,
-    horas:
-      soma > 0
-        ? Math.max(1, Math.round((pesos[i] / soma) * totalHoras))
-        : 1,
+    horas: (pesos[i] / soma) * total,
   }));
+
+  // Arredondamento controlado
+  let horasInteiras = distribuicao.map((s) => ({
+    ...s,
+    horas: Math.floor(s.horas),
+  }));
+
+  let somaHoras = horasInteiras.reduce((acc, s) => acc + s.horas, 0);
+  let resto = total - somaHoras;
+
+  // Distribui o resto (as horas que sobraram)
+  if (resto > 0) {
+    // Ordena pelos maiores decimais
+    const ordenados = distribuicao
+      .map((s, i) => ({
+        index: i,
+        decimal: s.horas - Math.floor(s.horas),
+      }))
+      .sort((a, b) => b.decimal - a.decimal);
+
+    for (let i = 0; i < resto; i++) {
+      horasInteiras[ordenados[i].index].horas += 1;
+    }
+  }
+
+  return horasInteiras;
 }
- 
 // ── Ícone ──────────────────────────────────────────────────────────────────
 export function getIconLabel(id) {
   return ICON_MAP[id] ?? "📖";
