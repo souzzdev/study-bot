@@ -4,9 +4,13 @@ import { ICON_MAP, STORAGE_KEY } from "../constants";
  export function calcDistribuicao(subjects, totalHoras) {
   if (!subjects.length) return [];
 
-  const pesos = subjects.map(
-    s => s.difficulty * s.content * s.weight
-  );
+  const pesos = subjects.map(s => {
+    const difficulty = Number(s.difficulty) || 0;
+    const content = Number(s.content) || 0;
+    const weight = Number(s.weight) || 0;
+
+    return difficulty * content * weight;
+  });
 
   const soma = pesos.reduce((a, b) => a + b, 0);
 
@@ -14,15 +18,11 @@ import { ICON_MAP, STORAGE_KEY } from "../constants";
     return subjects.map(s => ({ ...s, horas: 0 }));
   }
 
-  // distribuição proporcional (decimal)
   const distribuicao = pesos.map(p => (p / soma) * totalHoras);
 
-  // parte inteira
   let horas = distribuicao.map(h => Math.floor(h));
-
   let restante = totalHoras - horas.reduce((a, b) => a + b, 0);
 
-  // distribuir o resto pelas maiores frações
   const ordem = distribuicao
     .map((h, i) => ({ i, frac: h - Math.floor(h) }))
     .sort((a, b) => b.frac - a.frac);
@@ -36,6 +36,7 @@ import { ICON_MAP, STORAGE_KEY } from "../constants";
     horas: horas[i],
   }));
 }
+  
 // ── Ícone ──────────────────────────────────────────────────────────────────
 export function getIconLabel(id) {
   return ICON_MAP[id] ?? "📖";
