@@ -4,39 +4,21 @@ import { ICON_MAP, STORAGE_KEY } from "../constants";
  export function calcDistribuicao(subjects, totalHoras) {
   if (!subjects.length) return [];
 
-  const pesos = subjects.map(s => {
-    const difficulty = Number(s.difficulty) || 0;
-    const content = Number(s.content) || 0;
-    const weight = Number(s.weight) || 0;
-
-    return difficulty * content * weight;
-  });
+  const pesos = subjects.map(
+    (s) => s.dificuldade * s.conteudo * s.peso
+  );
 
   const soma = pesos.reduce((a, b) => a + b, 0);
 
-  if (soma === 0) {
-    return subjects.map(s => ({ ...s, horas: 0 }));
-  }
-
-  const distribuicao = pesos.map(p => (p / soma) * totalHoras);
-
-  let horas = distribuicao.map(h => Math.floor(h));
-  let restante = totalHoras - horas.reduce((a, b) => a + b, 0);
-
-  const ordem = distribuicao
-    .map((h, i) => ({ i, frac: h - Math.floor(h) }))
-    .sort((a, b) => b.frac - a.frac);
-
-  for (let i = 0; i < restante; i++) {
-    horas[ordem[i].i]++;
-  }
-
   return subjects.map((s, i) => ({
     ...s,
-    horas: horas[i],
+    horas:
+      soma > 0
+        ? Math.max(1, Math.round((pesos[i] / soma) * totalHoras))
+        : 1,
   }));
 }
-  
+ 
 // ── Ícone ──────────────────────────────────────────────────────────────────
 export function getIconLabel(id) {
   return ICON_MAP[id] ?? "📖";
