@@ -3,11 +3,34 @@ import { ICON_MAP, STORAGE_KEY } from "../constants";
 // ── Distribuição de horas por matéria ──────────────────────────────────────
 export function calcDistribuicao(subjects, totalHoras) {
   if (!subjects.length) return [];
-  const pesos = subjects.map((s) => s.dificuldade * s.conteudo * s.peso);
+
+  const pesos = subjects.map(s => s.dificuldade * s.conteudo * s.peso);
   const soma = pesos.reduce((a, b) => a + b, 0);
+
+  if (soma === 0) {
+    return subjects.map(s => ({ ...s, horas: 0 }));
+  }
+
+  // distribuição inicial (decimal)
+  const distribuicao = pesos.map(p => (p / soma) * totalHoras);
+
+  // parte inteira
+  let horas = distribuicao.map(h => Math.floor(h));
+
+  let restante = totalHoras - horas.reduce((a, b) => a + b, 0);
+
+  // distribuir o restante baseado nas maiores frações
+  const indices = distribuicao
+    .map((h, i) => ({ i, frac: h - Math.floor(h) }))
+    .sort((a, b) => b.frac - a.frac);
+
+  for (let j = 0; j < restante; j++) {
+    horas[indices[j].i]++;
+  }
+
   return subjects.map((s, i) => ({
     ...s,
-    horas: soma > 0 ? Math.max(1, Math.round((pesos[i] / soma) * totalHoras)) : 1,
+    horas: horas[i],
   }));
 }
 
