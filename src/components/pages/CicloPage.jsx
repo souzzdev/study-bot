@@ -1,6 +1,8 @@
 import { ProgressBar, SubjectCard, Button } from "../ui";
+import { getMateriasComMinimoHoras } from "../../utils";
 
 export function CicloPage({ dist, totalConcluidos, totalBlocos, progressoPct, onToggleBloco, onResetar, onAdicionarMateria }) {
+  const minimoHoras = getMateriasComMinimoHoras(dist);
   return (
     <div className="fade" style={{ padding: "1.5rem 16px 0" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -27,6 +29,15 @@ export function CicloPage({ dist, totalConcluidos, totalBlocos, progressoPct, on
         </div>
         <ProgressBar pct={progressoPct} />
       </div>
+
+      {minimoHoras.length > 0 && (
+        <div style={{ background: "#1e2a1a", border: "1px solid #2a4a2a", borderRadius: 10, padding: "0.8rem 1rem", marginBottom: 12, display: "flex", gap: 8, alignItems: "flex-start" }}>
+          <span style={{ flexShrink: 0, fontSize: 15 }}>⚠️</span>
+          <p style={{ fontSize: "0.78rem", color: "#86efac", lineHeight: 1.5 }}>
+            <strong>Distribuição desigual:</strong> {minimoHoras.join(", ")} ficaram com apenas 1h devido ao grande contraste de pesos. Considere ajustar os valores.
+          </p>
+        </div>
+      )}
 
       {dist.length === 0 ? (
         <div style={{ textAlign: "center", padding: "3rem 0", color: "#555" }}>

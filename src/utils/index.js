@@ -1,23 +1,53 @@
 import { ICON_MAP, STORAGE_KEY } from "../constants";
 
-// ── Distribuição de horas por matéria ──────────────────────────────────────
+// ── Distribuição de horas — Largest Remainder Method ──────────────────────
+// Garante que a soma sempre fecha exato no totalHoras, sem erro de arredondamento.
+// Mínimo de 1h por matéria aplicado apenas quando o total comporta.
 export function calcDistribuicao(subjects, totalHoras) {
-  if (!subjects.length) return [];
+  const n = subjects.length;
+  if (n === 0) return [];
 
-  const pesos = subjects.map(
-    (s) => s.dificuldade * s.conteudo * s.peso
+  const pesos  = subjects.map((s) => s.dificuldade * s.conteudo * s.peso);
+  const soma   = pesos.reduce((a, b) => a + b, 0);
+
+  // 1. Horas exatas proporcionais (float)
+  const exatas = pesos.map((p) => (p / soma) * totalHoras);
+
+  // 2. Parte inteira (floor) de cada matéria
+  const floors  = exatas.map(Math.floor);
+  let restante  = totalHoras - floors.reduce((a, b) => a + b, 0);
+
+  // 3. Distribuir o restante pelos maiores restos decimais
+  const resultado = [...floors];
+  const indices   = [...Array(n).keys()].sort(
+    (a, b) => (exatas[b] - floors[b]) - (exatas[a] - floors[a])
   );
+  for (let i = 0; i < restante; i++) {
+    resultado[indices[i]] += 1;
+  }
 
-  const soma = pesos.reduce((a, b) => a + b, 0);
+  // 4. Garantir mínimo de 1h apenas quando o total comporta (totalHoras >= n)
+  //    Matérias que ficaram com 0h recebem 1h da que tem mais horas
+  if (totalHoras >= n) {
+    for (let i = 0; i < n; i++) {
+      if (resultado[i] === 0) {
+        const doador = resultado.indexOf(Math.max(...resultado));
+        if (resultado[doador] > 1) {
+          resultado[doador] -= 1;
+          resultado[i] = 1;
+        }
+      }
+    }
+  }
 
-  return subjects.map((s, i) => ({
-    ...s,
-    horas:
-      soma > 0
-        ? Math.max(1, Math.round((pesos[i] / soma) * totalHoras))
-        : 1,
-  }));
+  return subjects.map((s, i) => ({ ...s, horas: resultado[i] }));
 }
+
+// Retorna IDs das matérias que ficaram com apenas 1h (aviso ao usuário)
+export function getMateriasComMinimoHoras(dist) {
+  return dist.filter((s) => s.horas === 1).map((s) => s.nome);
+}
+
 // ── Ícone ──────────────────────────────────────────────────────────────────
 export function getIconLabel(id) {
   return ICON_MAP[id] ?? "📖";

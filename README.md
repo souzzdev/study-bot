@@ -1,20 +1,32 @@
 # StudyBot — Ciclo de Estudos
 
-Ferramenta para planejar e acompanhar ciclos de estudos com distribuição inteligente de horas por matéria.
+Ferramenta PWA para planejar e acompanhar ciclos de estudos com distribuição inteligente de horas por matéria.
 
-## Estrutura do projeto
+## Funcionalidades
+
+- Ciclo de estudos com blocos de 1h por matéria
+- Distribuição automática por Dificuldade × Conteúdo × Peso
+- Progresso salvo automaticamente no `localStorage`
+- Histórico dos últimos 20 ciclos concluídos
+- Reordenar matérias por drag and drop (desktop e mobile)
+- Import/Export JSON compatível com Studyn
+- Funciona offline (PWA — instalável na tela inicial)
+
+## Estrutura
 
 ```
 src/
-├── constants/        # Cores, ícones, chaves — sem lógica
-├── utils/            # Funções puras: cálculo, storage, import/export
+├── constants/          → cores, ícones, chaves de storage
+├── utils/              → funções puras: cálculo, storage, import/export
 ├── hooks/
-│   └── useStudyBot   # Todo o estado e ações da aplicação
+│   ├── useStudyBot.js  → estado central e ações
+│   ├── useHistorico.js → histórico de ciclos
+│   └── useDragSort.js  → drag and drop nativo (mouse + touch)
 ├── components/
-│   ├── ui/           # Componentes reutilizáveis (Button, Input, Card...)
-│   ├── layout/       # Header, BottomNav
-│   └── pages/        # HomePage, CicloPage, AdicionarPage, ListaPage
-└── App.jsx           # Orquestrador de navegação
+│   ├── ui/             → Button, Input, ConfirmModal, SubjectCard...
+│   ├── layout/         → Header, BottomNav
+│   └── pages/          → HomePage, CicloPage, AdicionarPage, ListaPage, HistoricoPage
+└── App.jsx             → navegação e orquestração
 ```
 
 ## Como rodar
@@ -29,6 +41,14 @@ npm run dev
 ```bash
 npm run build
 ```
+
+## Como publicar (Vercel)
+
+1. Suba o projeto no GitHub
+2. Acesse vercel.com → New Project → selecione o repositório
+3. Clique em Deploy
+
+O app será instalável como PWA direto do navegador após o deploy.
 
 ## Formato de importação (compatível com Studyn)
 
@@ -50,7 +70,3 @@ npm run build
   "exportedAt": "2026-01-01T00:00:00.000Z"
 }
 ```
-
-## Persistência
-
-Os dados são salvos automaticamente no `localStorage` do navegador a cada alteração. Use **Exportar Ciclo** para fazer backup em arquivo JSON.
