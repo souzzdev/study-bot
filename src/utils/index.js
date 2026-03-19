@@ -7,7 +7,7 @@ export function calcDistribuicao(subjects, totalHoras) {
   const n = subjects.length;
   if (n === 0) return [];
 
-  const pesos  = subjects.map((s) => s.dificuldade * s.conteudo * s.peso);
+  const pesos  = subjects.map((s) => Math.sqrt(s.dificuldade * s.conteudo * s.peso));
   const soma   = pesos.reduce((a, b) => a + b, 0);
 
   // 1. Horas exatas proporcionais (float)
